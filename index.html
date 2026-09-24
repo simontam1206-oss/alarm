@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F8FAFC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Clock · Alarm">
+<title>Clock · Alarm — 數學題喚醒鬧鐘</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233B82F6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><circle cx='12' cy='12' r='9'/><path d='M12 7v5l3.5 2.2'/></svg>">
+<style>
+  :root{
+    /* 高審美低飽和調色盤 — 依使用者指定規範 */
+    --bg:#F8FAFC;
+    --surface:#FFFFFF;
+    --surface-2:#F1F5F9;
+    --ink:#1E293B;
+    --ink-2:#5F6B84;          /* 4.89:1 on --surface-2 ／ 5.35:1 on --surface ／ 5.12:1 on --bg */
+    --line:#E2E8F0;
+    --accent:#3B82F6;
+    --accent-strong:#2563EB;  /* 按鈕實底：白字 5.17:1 */
+    --accent-ink:#1D4ED8;     /* 淺底上的藍字 6.4:1 */
+    --accent-soft:#EFF6FF;
+    --ok:#10B981;
+    --ok-ink:#047857;
+    --ok-soft:#ECFDF5;
+    --danger:#DC2626;
+    --danger-ink:#B91C1C;     /* 5.9:1 on --danger-soft */
+    --danger-soft:#FEF2F2;
+    --on-accent:#FFFFFF;
+
+    --shadow-sm:0 1px 2px rgba(15,23,42,.04),0 2px 6px rgba(15,23,42,.05);
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 14px 30px -12px rgba(15,23,42,.14);
+    --shadow-lg:0 28px 70px -20px rgba(15,23,42,.38);
+    --r:16px;
+    --r-sm:10px;
+    --ease:cubic-bezier(.16,.84,.28,1);
+  }
+  html[data-theme="dark"]{
+    --bg:#0F172A;
+    --surface:#1E293B;
+    --surface-2:#172033;
+    --ink:#F1F5F9;
+    --ink-2:#94A3B8;          /* 7.1:1 on --bg ／ 5.7:1 on --surface */
+    --line:#334155;
+    --accent:#60A5FA;
+    --accent-strong:#2563EB;
+    --accent-ink:#93C5FD;
+    --accent-soft:#152347;
+    --ok:#34D399;
+    --ok-ink:#34D399;
+    --ok-soft:#0C3326;
+    --danger:#EF4444;
+    --danger-ink:#F87171;     /* 5.3:1 on --danger-soft */
+    --danger-soft:#3B1A1A;
+    --on-accent:#FFFFFF;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.30),0 2px 6px rgba(0,0,0,.24);
+    --shadow:0 1px 2px rgba(0,0,0,.30),0 14px 30px -12px rgba(0,0,0,.55);
+    --shadow-lg:0 28px 70px -20px rgba(0,0,0,.72);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  /* 瀏覽器沒畫的那一層也要帶設計：選取、游標、捲軸、focus ring 全部收進調色盤 */
+  ::selection{background:var(--accent-soft);color:var(--accent-ink)}
+  input,textarea,select,[contenteditable]{caret-color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--ink-2)}
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    line-height:1.5;
+    padding:0 16px calc(56px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+    transition:background .3s var(--ease),color .3s var(--ease);
+  }
+  .wrap{max-width:720px;margin:0 auto}
+
+  /* ---------- 頁頭 ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:22px 2px 18px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .brand-mark{
+    width:34px;height:34px;border-radius:11px;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-soft);color:var(--accent-ink);
+  }
+  .brand-name{
+    font-size:17px;font-weight:700;letter-spacing:-.02em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .brand-name i{font-style:normal;color:var(--ink-2);margin:0 5px;font-weight:500}
+  .theme-btn{
+    width:38px;height:38px;border-radius:50%;flex:none;padding:0;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    box-shadow:var(--shadow-sm);
+    transition:transform .25s var(--ease),color .2s,border-color .2s,background .3s;
+  }
+  .theme-btn:hover{color:var(--accent);border-color:var(--accent)}
+  .theme-btn:active{transform:scale(.92)}
+  .theme-btn .ic{transition:transform .45s var(--ease)}
+  .theme-btn.spin .ic{transform:rotate(360deg)}
+
+  /* ---------- 主視覺：超大時鐘 ---------- */
+  .hero{
+    padding:26px 8px 30px;text-align:center;
+  }
+  .hero-time{
+    display:flex;align-items:baseline;justify-content:center;
+    font-size:clamp(3.4rem,17vw,6rem);
+    font-weight:700;letter-spacing:-.04em;line-height:.95;
+    font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum" 1;
+    color:var(--ink);
+  }
+  .hero-time .dig{
+    display:inline-block;min-width:.62em;text-align:center;
+    will-change:transform,opacity;
+  }
+  .hero-time .dig.go{animation:digIn .34s var(--ease)}
+  @keyframes digIn{
+    from{transform:translateY(.22em);opacity:0;filter:blur(3px)}
+    to{transform:none;opacity:1;filter:none}
+  }
+  .hero-time .sep{
+    display:inline-block;min-width:.26em;text-align:center;
+    color:var(--ink-2);font-weight:500;
+    animation:blink 2s steps(1,end) infinite;
+  }
+  @keyframes blink{0%,60%{opacity:1}61%,100%{opacity:.32}}
+  .hero-date{
+    margin-top:14px;font-size:14px;color:var(--ink-2);letter-spacing:.02em;
+  }
+  .hero-date b{color:var(--ink);font-weight:600}
+
+  /* ---------- 面板 ---------- */
+  .panel{
+    background:var(--surface);border-radius:var(--r);
+    box-shadow:var(--shadow);padding:18px;margin-bottom:18px;
+    transition:background .3s var(--ease),box-shadow .3s var(--ease);
+  }
+  .panel-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin:0 2px 6px;
+  }
+  .panel-head h2{font-size:15px;font-weight:700;margin:0;letter-spacing:-.01em}
+
+  /* ---------- 按鈕 ---------- */
+  .btn{
+    font:inherit;font-size:14px;font-weight:600;padding:9px 16px;border-radius:999px;
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);
+    cursor:pointer;white-space:nowrap;
+    transition:transform .18s var(--ease),background .18s,border-color .18s,box-shadow .18s,color .18s;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .btn:active{transform:translateY(1px) scale(.985)}
+  .btn.primary{
+    background:var(--accent-strong);border-color:var(--accent-strong);color:var(--on-accent);
+  }
+  /* hover 往更深一階走：白字 6.7:1（用 --accent 當 hover 底只有 3.7:1）*/
+  .btn.primary:hover{background:#1D4ED8;border-color:#1D4ED8;color:var(--on-accent)}
+  .btn.ghost{background:var(--surface-2);border-color:transparent;color:var(--ink-2)}
+  .btn.ghost:hover{background:var(--accent-soft);color:var(--accent-ink);border-color:transparent}
+  .btn.danger{color:var(--danger-ink);border-color:var(--danger-soft);background:var(--danger-soft)}
+  /* disabled 放最後，確保蓋過 primary 的底色與 hover（否則會出現深色字壓在藍底上）*/
+  .btn:disabled,.btn:disabled:hover{
+    opacity:.5;cursor:not-allowed;transform:none;box-shadow:none;
+    background:var(--surface-2);border-color:var(--line);color:var(--ink-2);
+  }
+
+  /* ---------- 鬧鐘卡片 ---------- */
+  ul.alarms{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .alarm{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 14px;border-radius:14px;background:var(--surface-2);
+    cursor:pointer;
+    transition:transform .22s var(--ease),box-shadow .22s var(--ease),background .22s,opacity .22s;
+  }
+  .alarm:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm);background:var(--surface)}
+  html[data-theme="dark"] .alarm:hover{background:#22304a}
+  .alarm.off{opacity:.55}
+  .al-time{
+    font-size:30px;font-weight:700;letter-spacing:-.03em;flex:none;
+    font-variant-numeric:tabular-nums;min-width:84px;
+  }
+  .alarm.off .al-time{color:var(--ink-2)}
+  .al-body{flex:1;min-width:0}
+  .al-label{
+    font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .al-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .tag{
+    font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
+    background:var(--accent-soft);color:var(--accent-ink);letter-spacing:.01em;
+  }
+  .tag.mute{background:transparent;border:1px solid var(--line);color:var(--ink-2)}
+  .al-sub{font-size:12px;color:var(--ink-2);margin-top:6px}
+  .al-sub .st-on{color:var(--ok-ink);font-weight:600}
+  .al-sub .st-done{color:var(--danger-ink);font-weight:600}
+  .al-acts{display:flex;align-items:center;gap:8px;flex:none}
+
+  .switch{
+    position:relative;width:46px;height:26px;flex:none;border-radius:999px;padding:0;
+    background:var(--line);border:none;cursor:pointer;
+    transition:background .28s var(--ease);
+  }
+  .switch::after{
+    content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:#fff;transition:transform .28s var(--ease),left .28s var(--ease);
+    box-shadow:0 1px 3px rgba(0,0,0,.28);
+  }
+  .switch[aria-checked="true"]{background:var(--accent-strong)}
+  .switch[aria-checked="true"]::after{left:23px}
+  .switch:active::after{width:23px}
+
+  .icon-btn{
+    width:34px;height:34px;border-radius:10px;padding:0;flex:none;
+    border:1px solid transparent;background:transparent;color:var(--ink-2);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    transition:color .18s,background .18s,transform .18s var(--ease);
+  }
+  .icon-btn:hover{color:var(--accent-ink);background:var(--accent-soft)}
+  .icon-btn:active{transform:scale(.9)}
+  .icon-btn.del:hover{color:var(--danger-ink);background:var(--danger-soft)}
+
+  .empty{
+    color:var(--ink-2);font-size:14px;text-align:center;padding:26px 8px;
+    border:1px dashed var(--line);border-radius:14px;margin-top:6px;
+  }
+
+  /* ---------- 進階設定 ---------- */
+  details.adv{overflow:hidden}
+  details.adv>summary{
+    list-style:none;cursor:pointer;font-size:15px;font-weight:700;letter-spacing:-.01em;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:2px;border-radius:8px;
+  }
+  details.adv>summary::-webkit-details-marker{display:none}
+  details.adv>summary .ic{transition:transform .25s var(--ease);color:var(--ink-2)}
+  details.adv[open]>summary .ic{transform:rotate(180deg)}
+  .adv-body{padding-top:16px}
+  .opts{display:flex;flex-direction:column;gap:11px;font-size:13px;color:var(--ink-2)}
+  .opts label{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:500;font-size:13px}
+  .opts .sub-label{color:var(--ink-2);font-size:12px;display:block;margin:-2px 0 0 24px}
+  input[type=checkbox]{accent-color:var(--accent-strong);width:16px;height:16px}
+  input[type=range]{width:130px;accent-color:var(--accent-strong)}
+  input[type=text],select{
+    font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--line);
+    border-radius:var(--r-sm);background:var(--surface);color:var(--ink);width:100%;
+    transition:border-color .18s,box-shadow .18s;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  select.slim{width:auto;font-size:13px;padding:6px 8px}
+  .diag{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
+  .diag .txt{font-size:12px;color:var(--ink-2);line-height:1.7}
+  .note{font-size:12px;color:var(--ink-2);margin-top:14px;line-height:1.75}
+  .note b{color:var(--ink)}
+  .foot{text-align:center;color:var(--ink-2);font-size:12px;padding:8px 0 4px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    padding:5px 11px;border-radius:999px;border:1px solid var(--line);
+    background:var(--surface-2);color:var(--ink-2);
+  }
+  .badge.ok{background:var(--ok-soft);border-color:transparent;color:var(--ok-ink)}
+  .badge.warn{background:var(--danger-soft);border-color:transparent;color:var(--danger-ink)}
+  .check{
+    margin-top:14px;border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;
+    background:var(--surface-2);font-size:13px;
+  }
+  .check .ttl{font-weight:700;font-size:13px;margin-bottom:8px}
+  .check .line{display:flex;justify-content:space-between;gap:10px;padding:3px 0;align-items:center}
+  .check .ok{color:var(--ok-ink);font-weight:600}
+  .check .no{color:var(--danger-ink);font-weight:600}
+
+  /* ---------- 圖示 ---------- */
+  .ic{width:18px;height:18px;flex:none;display:inline-block;vertical-align:-3px}
+  .ic-lg{width:24px;height:24px}
+  .ic-sm{width:15px;height:15px;vertical-align:-2px}
+
+  /* ---------- 遮罩與彈窗（淡入，不再是瞬間出現）---------- */
+  .mask{
+    position:fixed;inset:0;background:rgba(15,23,42,.55);
+    backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;padding:18px;z-index:99;
+    opacity:0;visibility:hidden;
+    transition:opacity .24s var(--ease),visibility .24s var(--ease);
+  }
+  .mask.show{opacity:1;visibility:visible}
+  .modal{
+    background:var(--surface);border-radius:20px;width:100%;max-width:420px;padding:22px;
+    box-shadow:var(--shadow-lg);
+    opacity:0;transform:translateY(14px) scale(.97);
+    transition:opacity .28s var(--ease),transform .32s var(--ease);
+    max-height:calc(100vh - 36px);overflow-y:auto;
+  }
+  .mask.show .modal{opacity:1;transform:none}
+  .m-head{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .bell{
+    width:42px;height:42px;border-radius:50%;background:var(--danger-soft);color:var(--danger-ink);
+    display:flex;align-items:center;justify-content:center;flex:none;
+    animation:swing 1.1s ease-in-out infinite;
+  }
+  @keyframes swing{0%,100%{transform:rotate(-13deg)}50%{transform:rotate(13deg)}}
+  .m-title{font-size:19px;font-weight:700;letter-spacing:-.02em}
+  .m-sub{font-size:13px;color:var(--ink-2)}
+  .q-box{
+    margin:16px 0 4px;background:var(--accent-soft);border-radius:14px;padding:20px 14px;text-align:center;
+  }
+  .q-text{font-size:32px;font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+  .dots{display:flex;gap:8px;justify-content:center;margin:14px 0 4px}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line);transition:.24s var(--ease)}
+  .dot.on{background:var(--ok);transform:scale(1.25)}
+  .q-progress{text-align:center;font-size:12px;color:var(--ink-2);margin-bottom:12px}
+  .m-row{display:flex;gap:8px}
+  .m-row input{
+    flex:1;font-size:20px;text-align:center;padding:12px;border:1px solid var(--line);
+    border-radius:var(--r-sm);font-variant-numeric:tabular-nums;
+  }
+  .msg{min-height:22px;font-size:13px;margin:10px 0 0;text-align:center}
+  .msg.err{color:var(--danger-ink);font-weight:600}
+  .msg.ok{color:var(--ok-ink);font-weight:600}
+  .shake{animation:shk .34s}
+  @keyframes shk{0%,100%{transform:translateX(0)}22%{transform:translateX(-9px)}62%{transform:translateX(7px)}}
+  .close-area{margin-top:12px}
+  .close-area button{width:100%;padding:13px;font-size:16px}
+  .m-hint{font-size:12px;color:var(--ink-2);text-align:center;margin-top:10px}
+  .sound-alert{
+    display:none;margin:12px 0 0;padding:12px;border-radius:var(--r-sm);
+    background:var(--danger-soft);text-align:center;
+  }
+  .sound-alert.show{display:block}
+  .sound-alert .t{
+    font-size:13px;font-weight:700;color:var(--danger-ink);margin-bottom:8px;
+    display:flex;align-items:center;gap:7px;justify-content:center;
+  }
+  .sound-alert button{width:100%}
+
+  /* ---------- 新增／編輯彈窗 ---------- */
+  .ed-title{font-size:18px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
+  .ed-sub{font-size:12px;color:var(--ink-2);margin-bottom:16px}
+  .field{margin-bottom:14px}
+  .field>label{
+    display:block;font-size:12px;font-weight:600;color:var(--ink-2);
+    margin-bottom:6px;letter-spacing:.02em;
+  }
+  .wheels-wrap{position:relative}
+  .wheel-band{
+    position:absolute;left:0;right:0;top:50%;height:40px;transform:translateY(-50%);
+    border-radius:12px;background:var(--surface-2);pointer-events:none;z-index:0;
+  }
+  .wheels{
+    display:flex;gap:6px;justify-content:center;position:relative;z-index:1;
+    -webkit-mask-image:linear-gradient(180deg,transparent,#000 24%,#000 76%,transparent);
+    mask-image:linear-gradient(180deg,transparent,#000 24%,#000 76%,transparent);
+  }
+  .wheel{
+    height:200px;overflow-y:auto;overflow-x:hidden;flex:1;max-width:104px;
+    scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;-ms-overflow-style:none;
+  }
+  .wheel::-webkit-scrollbar{display:none}
+  .wheel .pad{height:80px}
+  .wi{
+    height:40px;display:flex;align-items:center;justify-content:center;
+    scroll-snap-align:center;font-size:22px;font-weight:600;
+    font-variant-numeric:tabular-nums;color:var(--ink-2);
+    transition:color .18s,transform .18s var(--ease);
+  }
+  .wi.sel{color:var(--ink);font-weight:700;transform:scale(1.06)}
+  .wheel-unit{
+    position:absolute;top:50%;transform:translateY(-50%);
+    font-size:12px;color:var(--ink-2);pointer-events:none;
+  }
+  .days{display:flex;gap:6px;flex-wrap:wrap}
+  .day{
+    width:38px;height:38px;border-radius:50%;padding:0;
+    border:1px solid var(--line);background:transparent;color:var(--ink-2);
+    font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+    transition:background .2s var(--ease),color .2s,border-color .2s,transform .18s var(--ease);
+  }
+  .day:hover{border-color:var(--accent);color:var(--accent-ink)}
+  .day:active{transform:scale(.92)}
+  .day[aria-pressed="true"]{
+    background:var(--accent-strong);border-color:var(--accent-strong);color:var(--on-accent);
+  }
+  .ed-actions{display:flex;gap:8px;margin-top:18px}
+  .ed-actions .btn{flex:1;padding:12px}
+  .quick-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .chip{
+    font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
+    background:transparent;color:var(--ink-2);cursor:pointer;font-weight:600;
+    transition:border-color .18s,color .18s,background .18s;
+  }
+  .chip:hover{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+
+  @media (max-width:520px){
+    .al-time{font-size:26px;min-width:72px}
+    .alarm{gap:10px;padding:12px}
+    .al-acts{gap:4px}
+    .q-text{font-size:27px}
+    .hero{padding:18px 4px 24px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.01ms !important;transition-duration:.01ms !important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" id="brandMark"></span>
+      <span class="brand-name">Clock<i>·</i>Alarm</span>
+    </div>
+    <button class="theme-btn" id="btnTheme" aria-label="切換深淺色模式" title="切換深淺色模式"></button>
+  </header>
+
+  <section class="hero">
+    <div class="hero-time" id="clock" role="timer" aria-live="off"></div>
+    <div class="hero-date" id="today">—</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>鬧鐘</h2>
+      <button class="btn primary" id="btnAdd">新增鬧鐘</button>
+    </div>
+    <ul class="alarms" id="list"></ul>
+    <div class="empty" id="empty">還沒有鬧鐘。點右上角「新增鬧鐘」設定一個。</div>
+  </section>
+
+  <details class="panel adv">
+    <summary>進階設定與診斷 <span id="advChevron"></span></summary>
+    <div class="adv-body">
+      <div class="opts">
+        <label><input type="checkbox" id="chkNotify"> 響鈴時顯示系統通知</label>
+        <label><input type="checkbox" id="chkMedia"> 鎖屏相容播放（關屏也盡量響）</label>
+        <label><input type="checkbox" id="chkLock"> 鎖屏模式（iOS 整晚持續播放，耗電）
+          <span class="sub-label">iPhone 請關掉側邊靜音撥桿，並插著充電</span></label>
+        <label><input type="checkbox" id="chkKeepAlive"> 背景精準計時（靜音保活）</label>
+        <label><input type="checkbox" id="chkFallback"> 強制備援播放器</label>
+        <label>音量 <input type="range" id="rngVol" min="10" max="100" value="80"></label>
+        <label>預設鈴聲
+          <select id="selSound" class="slim"></select>
+        </label>
+        <label>保活音量
+          <select id="selBgAmp" class="slim">
+            <option value="0.0008">極低（建議 · 約 -62dB）</option>
+            <option value="0.0002">更低（約 -74dB）</option>
+            <option value="0.02">較大聲（除錯用 · -34dB）</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="diag">
+        <span class="badge" id="audioBadge">音訊狀態檢查中…</span>
+        <button class="btn ghost" id="btnEnable">啟用聲音</button>
+        <button class="btn ghost" id="btnPreview">試聽鈴聲</button>
+        <button class="btn ghost" id="btnBgTest">試聽保活音</button>
+        <button class="btn ghost" id="btnWake">保持螢幕恆亮</button>
+        <button class="btn ghost" id="btnTest5">5 秒後測試</button>
+        <button class="btn ghost" id="btnUpload">上傳自訂音檔</button>
+        <button class="btn ghost" id="btnDiag">診斷</button>
+        <input type="file" id="fileSound" accept="audio/*" hidden>
+      </div>
+      <div class="txt" id="diagTxt" style="font-size:12px;color:var(--ink-2);margin-top:10px"></div>
+      <div class="check" id="checkPanel"></div>
+
+      <div class="note">
+        · 鬧鐘只在本頁開啟時運作，請保持分頁開啟。<br>
+        · 瀏覽器會封鎖未經互動的自動播放，請先點「啟用聲音」。<br>
+        · 自訂音檔建議小於 2MB，檔案過大時只會在本次開啟期間有效。<br>
+        · <b>保活音應該幾乎聽不到。</b>若聽得到，把「保活音量」調到「更低」；可用「試聽保活音」確認。<br>
+        · iPhone 側邊靜音撥桿要關掉（否則聲音不會出來）；鎖屏模式整晚持續播放，耗電約等於聽一晚音樂。<br>
+        · 鎖屏模式若實測無效（iOS 版本太舊），改用「設定 → 螢幕顯示與亮度 → 自動鎖定 → 永不」並把亮度拉最低。
+      </div>
+    </div>
+  </details>
+
+  <footer class="foot">Clock · Alarm — 網頁鬧鐘需保持頁面開啟</footer>
+</div>
+
+<!-- 響鈴解鎖彈窗 -->
+<div class="mask" id="mask">
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="m-head">
+      <div class="bell" id="bellIcon"></div>
+      <div>
+        <div class="m-title" id="mTitle">鬧鐘響了！</div>
+        <div class="m-sub" id="mSub">連續答對 5 題才能關閉</div>
+      </div>
+    </div>
+
+    <div class="q-box"><div class="q-text" id="qText">1 + 1 = ?</div></div>
+    <div class="dots" id="dots"></div>
+    <div class="q-progress" id="qProg">已連續答對 0 / 5 題</div>
+
+    <div class="m-row">
+      <input type="text" id="qInput" inputmode="numeric" autocomplete="off" placeholder="輸入答案">
+      <button class="btn primary" id="btnSubmit">送出</button>
+    </div>
+    <div class="msg" id="msg"></div>
+
+    <div class="sound-alert" id="soundAlert">
+      <div class="t" id="alertTitle"></div>
+      <button class="btn danger" id="btnEnable2">點我啟用聲音並重新播放</button>
+    </div>
+
+    <div class="close-area">
+      <button class="btn primary" id="btnStop" disabled>關閉鬧鐘</button>
+    </div>
+    <div class="m-hint">答錯會重新計數。</div>
+  </div>
+</div>
+
+<!-- 新增／編輯鬧鐘彈窗 -->
+<div class="mask" id="edMask">
+  <div class="modal" id="edModal" role="dialog" aria-modal="true" aria-labelledby="edTitle">
+    <div class="ed-title" id="edTitle">新增鬧鐘</div>
+    <div class="ed-sub" id="edSub">滑動選擇時間</div>
+
+    <div class="field">
+      <div class="wheels-wrap">
+        <div class="wheel-band"></div>
+        <div class="wheels">
+          <div class="wheel" id="wheelH"></div>
+          <div class="wheel" id="wheelM"></div>
+        </div>
+      </div>
+      <div class="quick-row" id="edQuick">
+        <button class="chip" data-min="1">+1 分</button>
+        <button class="chip" data-min="5">+5 分</button>
+        <button class="chip" data-min="10">+10 分</button>
+        <button class="chip" data-min="30">+30 分</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="edLabel">備註</label>
+      <input type="text" id="edLabel" placeholder="例如：起床 / 開會" maxlength="20">
+    </div>
+
+    <div class="field">
+      <label>重複</label>
+      <div class="days" id="edDays"></div>
+    </div>
+
+    <div class="field">
+      <label for="edSound">鈴聲</label>
+      <select id="edSound"></select>
+    </div>
+
+    <div class="ed-actions">
+      <button class="btn ghost" id="edCancel">取消</button>
+      <button class="btn primary" id="edSave">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- 常數與狀態 ---------------- */
+  var LS_ALARM = "mathAlarm.alarms.v1";
+  var LS_SOUND = "mathAlarm.sounds.v1";
+  var LS_PREF  = "mathAlarm.pref.v1";
+
+  var BUILTIN = [
+    {id:"beep",  name:"嗶嗶聲"},
+    {id:"buzz",  name:"蜂鳴器"},
+    {id:"rise",  name:"漸強哨音"},
+    {id:"chord", name:"鋼琴和弦"}
+  ];
+
+  var IS_MOBILE = /Android|iPhone|iPad|iPod|IEMobile|Mobile|Silk/i.test(navigator.userAgent || "");
+  var IS_IOS = /iPad|iPhone|iPod/i.test(navigator.userAgent || "") ||
+               (navigator.platform === "MacIntel" && (navigator.maxTouchPoints || 0) > 1);
+
+  var alarms = [];        // {id,time,label,sound,enabled,done,days:[]}
+  var customSounds = [];  // {id,name,dataUrl}
+  var SYS_DARK = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  var prefs = {notify:false, keepAlive:IS_MOBILE, vol:80, forceFallback:false,
+               mediaMode:IS_MOBILE, lockMode:IS_IOS, bgAmp:0.0008, theme:(SYS_DARK ? "dark" : "light")};
+
+  var ringing = false;    // 是否有鬧鐘正在響
+  var audioUnlocked = false; // 聲音是否已成功解鎖過
+  var pending = [];       // 排隊待處理的鬧鐘
+  var current = null;     // 目前彈窗處理中的鬧鐘
+  var streak = 0;         // 連續答對數
+  var answer = 0;
+  var previewTimer = null;
+  var keepAliveEl = null;
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---- 圖示：手繪 SVG，統一 1.7 描邊（craft floor 禁 emoji 當圖示）---- */
+  function svg(path, extra){
+    return '<svg class="ic' + (extra || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+           'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + path + '</svg>';
+  }
+  var ICON = {
+    // 鈴鐺
+    bell: '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    // 喇叭（有聲）
+    volOn: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>',
+    // 喇叭（靜音）
+    volOff: '<path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/>',
+    // 打勾
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    // 叉
+    close: '<path d="M18 6 6 18M6 6l12 12"/>',
+    // 警告三角
+    warn: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+    // 太陽（螢幕恆亮 / 淺色模式）
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    // 月亮（深色模式）
+    moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+    // 時鐘（品牌）
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.9"/>',
+    // 鉛筆（編輯）
+    pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    // 垃圾桶（刪除）
+    trash: '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/>',
+    // 加號
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    // 向下箭頭（展開）
+    chevron: '<path d="m6 9 6 6 6-6"/>'
+  };
+
+  /* ---------------- 工具 ---------------- */
+  function pad(n){ return (n<10?"0":"") + n; }
+  function hhmm(d){ return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function rand(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+
+  function saveAlarms(){
+    try{
+      localStorage.setItem(LS_ALARM, JSON.stringify(alarms.map(function(a){
+        return {id:a.id, time:a.time, label:a.label, sound:a.sound,
+                enabled:a.enabled, done:a.done, days:a.days || []};
+      })));
+    }catch(e){}
+  }
+  function saveSounds(){
+    try{ localStorage.setItem(LS_SOUND, JSON.stringify(customSounds)); }
+    catch(e){ /* 超過配額，僅保留本次開啟期間 */ }
+  }
+  function savePrefs(){
+    try{ localStorage.setItem(LS_PREF, JSON.stringify(prefs)); }catch(e){}
+  }
+  function load(){
+    try{ alarms = JSON.parse(localStorage.getItem(LS_ALARM) || "[]"); }catch(e){ alarms = []; }
+    try{ customSounds = JSON.parse(localStorage.getItem(LS_SOUND) || "[]"); }catch(e){ customSounds = []; }
+    try{ var p = JSON.parse(localStorage.getItem(LS_PREF) || "{}");
+         if(p && typeof p === "object"){
+           if(typeof p.notify === "boolean") prefs.notify = p.notify;
+           if(typeof p.keepAlive === "boolean") prefs.keepAlive = p.keepAlive;
+           if(typeof p.vol === "number") prefs.vol = p.vol;
+           if(typeof p.forceFallback === "boolean") prefs.forceFallback = p.forceFallback;
+           if(typeof p.mediaMode === "boolean") prefs.mediaMode = p.mediaMode;
+           if(typeof p.lockMode === "boolean") prefs.lockMode = p.lockMode;
+           if(typeof p.bgAmp === "number" && p.bgAmp > 0 && p.bgAmp <= 0.05) prefs.bgAmp = p.bgAmp;
+           if(p.theme === "dark" || p.theme === "light") prefs.theme = p.theme;
+         }
+    }catch(e){}
+    // 載入當下不補觸發：標記目前分鐘已檢查
+    var k = hhmm(new Date());
+    alarms.forEach(function(a){
+      a._lastKey = k; a.done = !!a.done; a.enabled = !!a.enabled;
+      if(!Array.isArray(a.days)) a.days = [];
+      a.days = a.days.filter(function(d){ return d >= 0 && d <= 6; });
+    });
+    applyTheme(prefs.theme, false);
+  }
+
+  /* ---------------- 主題 ---------------- */
+  function applyTheme(name, animate){
+    prefs.theme = (name === "dark") ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", prefs.theme);
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if(meta) meta.setAttribute("content", prefs.theme === "dark" ? "#0F172A" : "#F8FAFC");
+    var btn = $("btnTheme");
+    if(btn){
+      btn.innerHTML = svg(prefs.theme === "dark" ? ICON.sun : ICON.moon);
+      btn.setAttribute("aria-label", prefs.theme === "dark" ? "切換為淺色模式" : "切換為深色模式");
+      if(animate){
+        btn.classList.remove("spin");
+        void btn.offsetWidth;
+        btn.classList.add("spin");
+      }
+    }
+  }
+
+  /* ---------------- 音效引擎 ---------------- */
+  var ctx = null, master = null;
+  function ac(){
+    try{
+      if(!ctx){
+        var C = window.AudioContext || window.webkitAudioContext;
+        if(!C) return null;
+        ctx = new C();
+        master = ctx.createGain();
+        master.gain.value = prefs.vol/100;
+        master.connect(ctx.destination);
+      }
+      if(ctx.state === "suspended" && ctx.resume) ctx.resume();
+      if(ctx.state === "running") audioUnlocked = true;
+      return ctx;
+    }catch(e){ return null; }
+  }
+  function setVol(){
+    if(master) master.gain.value = prefs.vol/100;
+    if(customEl) customEl.volume = Math.max(0.05, prefs.vol/100);
+  }
+
+  /* ---------- 音訊狀態診斷 ---------- */
+  function ctxState(){
+    if(!ctx) return "none";
+    try{ return ctx.state; }catch(e){ return "closed"; }
+  }
+  function refreshBadge(){
+    var el = $("audioBadge");
+    if(!el) return;
+    var st = ctxState();
+    if(st === "running"){ el.className = "badge ok";  el.innerHTML = svg(ICON.volOn) + "音訊已就緒"; }
+    else if(st === "suspended"){ el.className = "badge warn"; el.innerHTML = svg(ICON.volOff) + "音訊被瀏覽器鎖住 — 點「啟用聲音」"; }
+    else if(st === "closed"){ el.className = "badge warn"; el.innerHTML = svg(ICON.volOff) + "音訊通道已關閉 — 請重新整理"; }
+    else{ el.className = "badge warn"; el.innerHTML = svg(ICON.volOff) + "尚未初始化 — 點「啟用聲音」"; }
+  }
+  // 任何互動都嘗試解鎖，且在解鎖成功時補播目前該響的鈴聲
+  function ensureAudio(){
+    var c = ac();
+    if(!c) return;
+    var retry = function(){
+      if(ctxState() === "running"){
+        refreshBadge();
+        $("soundAlert").classList.remove("show");
+        if(ringing) playSound(current ? current.sound : "beep");
+      }else{
+        refreshBadge();
+      }
+    };
+    if(c.resume) { var p = c.resume(); if(p && p.then) p.then(retry, retry); else setTimeout(retry, 200); }
+    else setTimeout(retry, 200);
+    setTimeout(refreshBadge, 400);
+  }
+  // 備援：<audio> + 生成的 WAV 循環（繞過 Web Audio）
+  function startWavFallback(id){
+    if(fallbackEl) return;
+    if(!id) id = (current && current.sound) || "beep";
+    // 自訂音檔在備援模式下照樣用 <audio> 播
+    if(id.indexOf("custom:") === 0){
+      var sid = id.slice(7);
+      for(var i=0;i<customSounds.length;i++){
+        if(customSounds[i].id === sid){
+          try{
+            fallbackEl = new Audio(customSounds[i].dataUrl);
+            fallbackEl.loop = true;
+            fallbackEl.volume = Math.max(0.2, prefs.vol/100);
+            var q = fallbackEl.play();
+            if(q && q.catch) q.catch(function(){ fallbackEl = null; if(!prefs.forceFallback) startBuiltin("beep"); });
+            else audioUnlocked = true;
+            if(q && q.then) q.then(function(){ audioUnlocked = true; }, function(){});
+          }catch(e){}
+          return;
+        }
+      }
+      id = "beep";
+    }
+    try{
+      fallbackEl = new Audio(makeFallbackRing(id));
+      fallbackEl.loop = true;
+      fallbackEl.volume = Math.max(0.2, prefs.vol/100);
+      var p = fallbackEl.play();
+      if(p && p.catch) p.catch(function(){
+        // 媒體元素也播不出來 → 退回 Web Audio 最後一搏
+        fallbackEl = null;
+        if(!prefs.forceFallback) startBuiltin(id);
+      });
+      if(p && p.then) p.then(function(){ audioUnlocked = true; }, function(){});
+      else audioUnlocked = true;
+    }catch(e){}
+  }
+  /* ---------- 鎖屏模式：持續背景音，讓 iOS 不凍結頁面 ---------- */
+  var bgEl = null, bgQuietUrl = null, bgQuietAmp = -1, ringOnBg = false;
+  // 保活音的振幅：iOS 不看 volume 屬性，只能做進 PCM。
+  // 0.02 ≈ -34dBFS（安靜房間裡很明顯）；預設 0.0008 ≈ -62dBFS，幾乎聽不到。
+  function bgUrl(){
+    if(!bgQuietUrl || bgQuietAmp !== prefs.bgAmp){
+      var s = new Float32Array(22050*2);
+      wavAdd(s, 22050, 0, 2, function(){ return 1000; }, "sine", prefs.bgAmp);
+      bgQuietUrl = encodeWav(s, 22050);
+      bgQuietAmp = prefs.bgAmp;
+    }
+    return bgQuietUrl;
+  }
+  // 換保活音量後，把正在播的背景音全部換掉重來
+  function restartBgAudio(){
+    stopBg();
+    if(keepAliveEl){ try{ keepAliveEl.pause(); }catch(e){} keepAliveEl = null; }
+    updateLockBg();
+    updateKeepAlive();
+  }
+  function customUrl(id){
+    if(id && id.indexOf("custom:") === 0){
+      var sid = id.slice(7);
+      for(var i=0;i<customSounds.length;i++) if(customSounds[i].id === sid) return customSounds[i].dataUrl;
+    }
+    return null;
+  }
+  function startBg(){
+    if(bgEl) return;
+    try{
+      bgEl = new Audio(bgUrl());
+      bgEl.loop = true;
+      bgEl.volume = 1;   // iOS 忽略此值；安靜度做在 WAV 振幅裡
+      var p = bgEl.play();
+      if(p && p.then) p.then(function(){ audioUnlocked = true; }, function(){});
+      else audioUnlocked = true;
+    }catch(e){}
+  }
+  function stopBg(){
+    if(!bgEl) return;
+    try{ bgEl.pause(); }catch(e){}
+    try{ bgEl.src = ""; }catch(e){}
+    bgEl = null;
+  }
+  function bgQuiet(){
+    if(!bgEl) return;
+    try{
+      bgEl.src = bgUrl(); bgEl.loop = true; bgEl.load();
+      var p = bgEl.play();
+      if(p && p.catch) p.catch(function(){});
+    }catch(e){}
+  }
+  function ringViaBg(id){
+    if(!bgEl) return false;
+    try{
+      bgEl.src = customUrl(id) || makeFallbackRing(id, 0.9);
+      bgEl.loop = true;
+      bgEl.volume = 1;
+      bgEl.load();
+      var p = bgEl.play();
+      if(p && p.catch) p.catch(function(){});
+      ringOnBg = true;
+      audioUnlocked = true;
+      return true;
+    }catch(e){ return false; }
+  }
+  function updateLockBg(){
+    var armed = false;
+    for(var i=0;i<alarms.length;i++) if(alarms[i].enabled && !alarms[i].done) armed = true;
+    if(prefs.lockMode && armed) startBg();
+    else if(!ringOnBg) stopBg();
+  }
+
+  function buzz(){
+    try{ if(navigator.vibrate) navigator.vibrate([700,300,700,300,700,300,700]); }catch(e){}
+  }
+  // 持續震動直到關閉（鎖屏時震動比聲音可靠）
+  var vibeTimer = null;
+  function startVibe(){
+    buzz();
+    if(vibeTimer) clearInterval(vibeTimer);
+    vibeTimer = setInterval(buzz, 2500);
+  }
+  function stopVibe(){
+    if(vibeTimer){ clearInterval(vibeTimer); vibeTimer = null; }
+    try{ if(navigator.vibrate) navigator.vibrate(0); }catch(e){}
+  }
+
+  function tone(c, freq, t0, dur, type, peak){
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type || "sine";
+    o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak || 0.5, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  }
+
+  // 每種鈴聲播一小段，回傳這段的秒數
+  var MOTIF = {
+    beep: function(c, t){
+      for(var i=0;i<4;i++) tone(c, 880, t + i*0.22, 0.14, "square", 0.35);
+      return 1.0;
+    },
+    buzz: function(c, t){
+      for(var i=0;i<12;i++) tone(c, 220 + (i%2)*90, t + i*0.07, 0.06, "sawtooth", 0.22);
+      return 1.0;
+    },
+    rise: function(c, t){
+      var o = c.createOscillator(), g = c.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(520, t);
+      o.frequency.exponentialRampToValueAtTime(1500, t + 0.55);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.45, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + 0.68);
+      return 0.85;
+    },
+    chord: function(c, t){
+      var notes = [523.25, 659.25, 783.99, 1046.50];
+      for(var i=0;i<notes.length;i++) tone(c, notes[i], t + i*0.09, 0.75, "triangle", 0.30);
+      return 1.25;
+    }
+  };
+
+  var ringTimer = null, customEl = null, fallbackEl = null;
+
+  function stopSound(){
+    if(ringTimer){ clearTimeout(ringTimer); ringTimer = null; }
+    if(customEl){ try{ customEl.pause(); customEl.currentTime = 0; }catch(e){} customEl = null; }
+    if(fallbackEl){ try{ fallbackEl.pause(); }catch(e){} fallbackEl = null; }
+    if(ringOnBg){
+      ringOnBg = false;
+      if(prefs.lockMode) bgQuiet(); else stopBg();
+    }
+  }
+
+  /* ---------- 備援鈴聲：針對每一種鈴聲各自生成一段 2 秒 WAV ---------- */
+  var fallbackUrls = {};
+  function wavAdd(s, sr, start, dur, freqFn, wave, amp){
+    var st = Math.floor(start*sr), n = Math.floor(dur*sr);
+    var phase = 0;
+    for(var j=0;j<n && st+j<s.length;j++){
+      var f = freqFn(j/sr);
+      phase += 2*Math.PI*f/sr;
+      var v;
+      if(wave === "square") v = (Math.sin(phase) >= 0 ? 1 : -1);
+      else if(wave === "saw") v = ((phase/(2*Math.PI)) % 1) * 2 - 1;
+      else v = Math.sin(phase);
+      var env = Math.min(1, j/(sr*0.008)) * Math.min(1, (n-j)/(sr*0.02));
+      var k = st + j;
+      s[k] += v * env * amp;
+      if(s[k] > 1) s[k] = 1; else if(s[k] < -1) s[k] = -1;
+    }
+  }
+  // targetPeak：把波形正規化到指定峰值。iOS 忽略 <audio>.volume，
+  // 所以「大聲/小聲」只能做進 PCM 本身。
+  function makeFallbackRing(id, targetPeak){
+    if(!MOTIF[id]) id = "beep";
+    var key = id + "|" + (targetPeak || 0);
+    if(fallbackUrls[key]) return fallbackUrls[key];
+    var sr = 22050, s = new Float32Array(sr*2);
+    var i, f;
+    if(id === "buzz"){
+      for(i=0;i<12;i++){
+        f = (i%2) ? 310 : 220;
+        wavAdd(s, sr, i*0.07, 0.06, (function(ff){ return function(){ return ff; }; })(f), "square", 0.35);
+      }
+    }else if(id === "rise"){
+      var sweep = function(t){ return 520*Math.pow(1500/520, t/0.55); };
+      wavAdd(s, sr, 0, 0.55, sweep, "sine", 0.45);
+      wavAdd(s, sr, 0.85, 0.55, sweep, "sine", 0.45);
+    }else if(id === "chord"){
+      var notes = [523.25, 659.25, 783.99, 1046.50];
+      for(i=0;i<notes.length;i++){
+        wavAdd(s, sr, i*0.09, 0.8, (function(n){ return function(){ return n; }; })(notes[i]), "sine", 0.24);
+      }
+    }else{ // beep
+      for(i=0;i<4;i++) wavAdd(s, sr, i*0.22, 0.15, function(){ return 880; }, "square", 0.4);
+      for(i=0;i<4;i++) wavAdd(s, sr, 1.0 + i*0.22, 0.15, function(){ return 880; }, "square", 0.4);
+    }
+    if(targetPeak){
+      var pk = 0;
+      for(var k2=0;k2<s.length;k2++){ var av = Math.abs(s[k2]); if(av > pk) pk = av; }
+      if(pk > 0){
+        var g = targetPeak / pk;
+        for(var k3=0;k3<s.length;k3++) s[k3] *= g;
+      }
+    }
+    fallbackUrls[key] = encodeWav(s, sr);
+    return fallbackUrls[key];
+  }
+  function encodeWav(samples, sampleRate){
+    var len = samples.length;
+    var buf = new ArrayBuffer(44 + len*2);
+    var dv = new DataView(buf);
+    function w(o, str){ for(var i=0;i<str.length;i++) dv.setUint8(o+i, str.charCodeAt(i)); }
+    w(0,"RIFF"); dv.setUint32(4, 36+len*2, true); w(8,"WAVE");
+    w(12,"fmt "); dv.setUint32(16,16,true); dv.setUint16(20,1,true); dv.setUint16(22,1,true);
+    dv.setUint32(24,sampleRate,true); dv.setUint32(28,sampleRate*2,true);
+    dv.setUint16(32,2,true); dv.setUint16(34,16,true);
+    w(36,"data"); dv.setUint32(40, len*2, true);
+    for(var i=0;i<len;i++){
+      var v = Math.max(-1, Math.min(1, samples[i]));
+      dv.setInt16(44 + i*2, v*0x7fff, true);
+    }
+    return URL.createObjectURL(new Blob([buf], {type:"audio/wav"}));
+  }
+
+  function playSound(id){
+    stopSound();
+    buzz();
+    // 鎖屏模式：沿用同一個背景媒體元素響鈴。iOS 只認「本來就在播」的那個元素，
+    // 另開一個 <audio> 會被擋掉，而且 iOS 不理 volume 屬性，所以要靠正規化過的大聲 WAV。
+    if(ringViaBg(id)){ verifyPlayback(id); return; }
+    // 手機 / 備援模式：改用 <audio> 媒體元素。
+    // 關鍵：螢幕關閉時瀏覽器會把 AudioContext 掛起，但媒體元素會被系統當成「正在播放」而保留。
+    if(prefs.forceFallback || prefs.mediaMode){ startWavFallback(id); verifyPlayback(id); return; }
+    // 自訂音檔
+    if(id && id.indexOf("custom:") === 0){
+      var sid = id.slice(7), found = null;
+      for(var i=0;i<customSounds.length;i++) if(customSounds[i].id === sid) found = customSounds[i];
+      if(found){
+        customEl = new Audio(found.dataUrl);
+        customEl.loop = true;
+        customEl.volume = Math.max(0.2, prefs.vol/100);
+        var p = customEl.play();
+        if(p && p.catch) p.catch(function(){ customEl = null; startBuiltin("beep"); });
+        verifyPlayback();
+        return;
+      }
+      id = "beep";
+    }
+    startBuiltin(id || "beep");
+    verifyPlayback(id || "beep");
+  }
+
+  // 播放後 500ms 檢查是否真的在響；沒有就亮警示 + 開備援
+  var verifyTimer = null;
+  function verifyPlayback(id){
+    if(!id) id = current ? current.sound : "beep";
+    if(verifyTimer) clearTimeout(verifyTimer);
+    verifyTimer = setTimeout(function(){
+      verifyTimer = null;
+      var mediaMode = prefs.mediaMode || prefs.forceFallback;
+      var blocked = mediaMode ? (!customEl && !fallbackEl)
+                              : (ctxState() !== "running" && !customEl && !fallbackEl);
+      if(blocked){
+        startWavFallback(id);
+        $("soundAlert").classList.add("show");
+        flash("聽不到聲音？點上方紅色按鈕啟用。", "err");
+      }else{
+        $("soundAlert").classList.remove("show");
+      }
+      refreshBadge();
+    }, 500);
+  }
+
+  function startBuiltin(id){
+    var c = ac();
+    if(!c || !MOTIF[id]){ startWavFallback(id); return; }
+    if(!MOTIF[id]) id = "beep";
+    var loop = function(){
+      var dur = 1;
+      try{ dur = MOTIF[id](c.currentTime + 0.06); }catch(e){ dur = 1; }
+      ringTimer = setTimeout(loop, Math.max(200, dur*1000));
+    };
+    loop();
+  }
+
+  function preview(id){
+    ac();
+    playSound(id);
+    if(previewTimer) clearTimeout(previewTimer);
+    previewTimer = setTimeout(function(){ stopSound(); previewTimer = null; }, 2600);
+  }
+
+  /* 背景靜音保活：讓分頁被視為「正在播放音訊」，避免背景計時被瀏覽器降頻 */
+  function updateKeepAlive(){
+    var need = prefs.keepAlive && alarms.some(function(a){ return a.enabled && !a.done; });
+    if(need && !keepAliveEl){
+      // 與鎖屏保活共用同一個「極低振幅」WAV；iOS 不看 volume，安靜度只能做在 PCM
+      keepAliveEl = new Audio(bgUrl());
+      keepAliveEl.loop = true;
+      keepAliveEl.volume = 1;
+      var p = keepAliveEl.play();
+      if(p && p.catch) p.catch(function(){});
+    }else if(!need && keepAliveEl){
+      try{ keepAliveEl.pause(); }catch(e){}
+      keepAliveEl = null;
+    }
+    updateLockBg();
+  }
+
+  /* ---------------- 數學題 ---------------- */
+  function genQuestion(){
+    var ops = ["+","-","×","÷"];
+    var op = ops[rand(0,3)];
+    var a,b,ans;
+    if(op === "+"){
+      a = rand(1,90); b = rand(1, 100-a); ans = a+b;
+    }else if(op === "-"){
+      a = rand(2,100); b = rand(1,a); ans = a-b;
+    }else if(op === "×"){
+      a = rand(2,9); b = rand(2,9); ans = a*b;
+    }else{
+      b = rand(2,9); ans = rand(2,9); a = b*ans;
+    }
+    answer = ans;
+    return a + " " + op + " " + b + " = ?";
+  }
+
+  /* ---------------- 渲染 ---------------- */
+  function soundName(id){
+    for(var i=0;i<BUILTIN.length;i++) if(BUILTIN[i].id === id) return BUILTIN[i].name;
+    for(var j=0;j<customSounds.length;j++) if(customSounds[j].id === id) return customSounds[j].name;
+    if(id && id.indexOf("custom:") === 0){
+      for(var k=0;k<customSounds.length;k++) if(customSounds[k].id === id.slice(7)) return customSounds[k].name;
+    }
+    return "嗶嗶聲";
+  }
+
+  function renderSounds(){
+    var sel = $("selSound"), prev = sel.value;
+    var html = "";
+    BUILTIN.forEach(function(s){ html += '<option value="'+s.id+'">'+s.name+'</option>'; });
+    customSounds.forEach(function(s){ html += '<option value="custom:'+s.id+'">'+s.name+'（自訂）</option>'; });
+    sel.innerHTML = html;
+    if(prev) sel.value = prev;
+  }
+
+  var DAY_ORDER = [1,2,3,4,5,6,0];              // 顯示順序：一 二 三 四 五 六 日
+  var DAY_NAME  = {0:"日",1:"一",2:"二",3:"三",4:"四",5:"五",6:"六"};
+
+  function daySummary(days){
+    if(!days || !days.length) return null;
+    var set = {};
+    days.forEach(function(d){ set[d] = true; });
+    var all = DAY_ORDER.every(function(d){ return set[d]; });
+    if(all) return "每天";
+    var wk = [1,2,3,4,5].every(function(d){ return set[d]; }) && !set[6] && !set[0];
+    if(wk) return "平日";
+    var we = set[6] && set[0] && [1,2,3,4,5].every(function(d){ return !set[d]; });
+    if(we) return "週末";
+    return DAY_ORDER.filter(function(d){ return set[d]; })
+                    .map(function(d){ return "週" + DAY_NAME[d]; }).join(" ");
+  }
+
+  function renderList(){
+    var ul = $("list");
+    ul.innerHTML = "";
+    $("empty").style.display = alarms.length ? "none" : "block";
+    if(!alarms.length) return;
+
+    alarms.sort(function(a,b){ return a.time < b.time ? -1 : (a.time > b.time ? 1 : 0); });
+
+    alarms.forEach(function(a){
+      var li = document.createElement("li");
+      li.className = "alarm" + (a.enabled && !a.done ? "" : " off");
+
+      var t = document.createElement("div");
+      t.className = "al-time";
+      t.textContent = a.time;
+
+      var body = document.createElement("div");
+      body.className = "al-body";
+
+      var lb = document.createElement("div");
+      lb.className = "al-label";
+      lb.textContent = a.label || "鬧鐘";
+      body.appendChild(lb);
+
+      var tags = document.createElement("div");
+      tags.className = "al-tags";
+      var sum = daySummary(a.days);
+      if(sum){
+        var tg = document.createElement("span");
+        tg.className = "tag";
+        tg.textContent = sum;
+        tags.appendChild(tg);
+      }else{
+        var tm = document.createElement("span");
+        tm.className = "tag mute";
+        tm.textContent = "不重複";
+        tags.appendChild(tm);
+      }
+      body.appendChild(tags);
+
+      var sb = document.createElement("div");
+      sb.className = "al-sub";
+      var state = a.done ? '<span class="st-done">已響鈴</span>'
+                : (a.enabled ? '<span class="st-on">待觸發</span>' : "已關閉");
+      sb.innerHTML = soundName(a.sound) + " · " + state;
+      body.appendChild(sb);
+
+      var acts = document.createElement("div");
+      acts.className = "al-acts";
+
+      var sw = document.createElement("button");
+      sw.className = "switch";
+      sw.setAttribute("role","switch");
+      sw.setAttribute("aria-checked", (a.enabled && !a.done) ? "true" : "false");
+      sw.setAttribute("aria-label", (a.label || "鬧鐘") + " " + a.time + " 啟用或關閉");
+      sw.onclick = function(e){
+        e.stopPropagation();
+        if(a.done){ a.done = false; a.enabled = true; }
+        else{ a.enabled = !a.enabled; }
+        if(a.enabled) a._lastKey = hhmm(new Date());
+        saveAlarms(); renderList(); updateKeepAlive();
+      };
+
+      var ed = document.createElement("button");
+      ed.className = "icon-btn";
+      ed.title = "編輯";
+      ed.setAttribute("aria-label","編輯 " + a.time);
+      ed.innerHTML = svg(ICON.pencil);
+      ed.onclick = function(e){ e.stopPropagation(); openEditor(a); };
+
+      var del = document.createElement("button");
+      del.className = "icon-btn del";
+      del.title = "刪除";
+      del.setAttribute("aria-label","刪除 " + a.time);
+      del.innerHTML = svg(ICON.trash);
+      del.onclick = function(e){
+        e.stopPropagation();
+        alarms = alarms.filter(function(x){ return x.id !== a.id; });
+        saveAlarms(); renderList(); updateKeepAlive();
+        toast("已刪除 " + a.time + " 的鬧鐘");
+      };
+
+      acts.appendChild(sw); acts.appendChild(ed); acts.appendChild(del);
+      li.appendChild(t); li.appendChild(body); li.appendChild(acts);
+      li.onclick = function(){ openEditor(a); };
+      ul.appendChild(li);
+    });
+  }
+
+  /* ---------------- 新增／編輯彈窗（滾輪選時間）---------------- */
+  var ITEM_H = 40;
+  var editing = null;   // 正在編輯的鬧鐘；null 表示新增
+  var edDays = [];      // 編輯中的重複日
+
+  function buildOptions(sel, suffix){
+    var html = "";
+    BUILTIN.forEach(function(s){ html += '<option value="'+s.id+'">'+s.name+'</option>'; });
+    customSounds.forEach(function(s){
+      html += '<option value="custom:'+s.id+'">'+s.name+(suffix ? "（自訂）" : "")+'</option>';
+    });
+    sel.innerHTML = html;
+  }
+
+  function buildWheel(el, count){
+    var html = '<div class="pad"></div>';
+    for(var i=0;i<count;i++) html += '<div class="wi" data-v="'+i+'">'+pad(i)+'</div>';
+    html += '<div class="pad"></div>';
+    el.innerHTML = html;
+    var t = null;
+    el.onscroll = function(){
+      if(t) clearTimeout(t);
+      t = setTimeout(function(){ syncWheel(el); }, 90);
+    };
+  }
+  function syncWheel(el){
+    var idx = Math.round(el.scrollTop / ITEM_H);
+    if(idx < 0) idx = 0;
+    var items = el.querySelectorAll(".wi");
+    for(var i=0;i<items.length;i++){
+      if(i === idx) items[i].classList.add("sel"); else items[i].classList.remove("sel");
+    }
+  }
+  function wheelVal(el){
+    var v = Math.round(el.scrollTop / ITEM_H);
+    if(!isFinite(v) || v < 0) v = 0;
+    return v;
+  }
+  function setWheel(el, v){
+    el.scrollTop = v * ITEM_H;
+    syncWheel(el);
+  }
+
+  function renderDays(){
+    var box = $("edDays");
+    box.innerHTML = "";
+    DAY_ORDER.forEach(function(d){
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "day";
+      b.textContent = DAY_NAME[d];
+      b.setAttribute("aria-pressed", edDays.indexOf(d) >= 0 ? "true" : "false");
+      b.setAttribute("aria-label", "每星期" + DAY_NAME[d]);
+      b.onclick = function(){
+        var i = edDays.indexOf(d);
+        if(i >= 0) edDays.splice(i, 1); else edDays.push(d);
+        edDays.sort(function(x,y){ return DAY_ORDER.indexOf(x) - DAY_ORDER.indexOf(y); });
+        renderDays();
+      };
+      box.appendChild(b);
+    });
+  }
+
+  function openEditor(a){
+    editing = a || null;
+    var h, m;
+    if(a && a.time){
+      var p = String(a.time).split(":");
+      h = Number(p[0]); m = Number(p[1]);
+    }else{
+      var d = new Date(Date.now() + 30*60000);
+      h = d.getHours(); m = d.getMinutes();
+    }
+    if(!isFinite(h)) h = 7;
+    if(!isFinite(m)) m = 0;
+    h = Math.max(0, Math.min(23, Math.round(h)));
+    m = Math.max(0, Math.min(59, Math.round(m)));
+
+    $("edTitle").textContent = a ? "編輯鬧鐘" : "新增鬧鐘";
+    $("edSub").textContent = a ? "滑動調整 " + a.time : "滑動選擇時間";
+    $("edLabel").value = a ? (a.label || "") : "";
+    buildOptions($("edSound"), true);
+    $("edSound").value = (a && a.sound) ? a.sound : ($("selSound").value || "beep");
+
+    edDays = (a && Array.isArray(a.days)) ? a.days.slice() : [];
+    renderDays();
+
+    buildWheel($("wheelH"), 24);
+    buildWheel($("wheelM"), 60);
+    $("edMask").classList.add("show");
+    setTimeout(function(){
+      setWheel($("wheelH"), h);
+      setWheel($("wheelM"), m);
+    }, 30);
+  }
+
+  function closeEditor(){
+    $("edMask").classList.remove("show");
+    editing = null;
+  }
+
+  function saveEditor(){
+    var h = wheelVal($("wheelH")), m = wheelVal($("wheelM"));
+    if(h > 23) h = 23;
+    if(m > 59) m = 59;
+    var time = pad(h) + ":" + pad(m);
+    var label = ($("edLabel").value || "").trim();
+    var sound = $("edSound").value;
+    var rep = edDays.length ? "（" + (daySummary(edDays) || "重複") + "）" : "";
+
+    if(editing){
+      editing.time = time;
+      editing.label = label;
+      editing.sound = sound;
+      editing.days = edDays.slice();
+      editing.done = false;
+      editing.enabled = true;
+      editing._lastKey = hhmm(new Date());
+      toast("已更新 " + time + rep);
+    }else{
+      alarms.push({
+        id: uid(), time: time, label: label, sound: sound,
+        enabled: true, done: false, days: edDays.slice(), _lastKey: hhmm(new Date())
+      });
+      toast("已新增 " + time + " 的鬧鐘" + rep);
+    }
+    saveAlarms(); renderList(); updateKeepAlive(); updateLockBg();
+    closeEditor();
+  }
+
+  function renderDots(){
+    var box = $("dots");
+    box.innerHTML = "";
+    for(var i=0;i<5;i++){
+      var d = document.createElement("span");
+      d.className = "dot" + (i < streak ? " on" : "");
+      box.appendChild(d);
+    }
+    $("qProg").textContent = "已連續答對 " + streak + " / 5 題";
+  }
+
+  function newQuestion(){
+    $("qText").textContent = genQuestion();
+    $("qInput").value = "";
+    renderDots();
+    try{ $("qInput").focus(); }catch(e){}
+  }
+
+  /* ---------------- 鬧鐘觸發 ---------------- */
+  function notify(a){
+    if(!prefs.notify) return;
+    try{
+      if(typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      new Notification((a.label || "鬧鐘"), {
+        body: a.time + " 到了，起來解題。", tag: a.id,
+        requireInteraction: true, renotify: true, silent: false
+      });
+    }catch(e){}
+  }
+
+  function fire(a){
+    if(ringing){ pending.push(a); return; }
+    ringing = true;
+    current = a;
+    streak = 0;
+
+    playSound(a.sound);
+    startVibe();
+    notify(a);
+    requestWakeLock();
+
+    $("mTitle").textContent = a.label || "鬧鐘";
+    $("mSub").textContent = a.time + " 到了 — 連續答對 5 題才能關閉";
+    $("btnStop").disabled = true;
+    $("btnSubmit").disabled = false;
+    $("qInput").value = "";
+    $("msg").textContent = "";
+    $("msg").className = "msg";
+    $("soundAlert").classList.remove("show");
+    $("mask").classList.add("show");
+    setTimeout(function(){ try{ $("qInput").focus(); }catch(e){} }, 320);
+    newQuestion();
+  }
+
+  function finishAlarm(){
+    var a = current;
+    stopSound();
+    stopVibe();
+    if(verifyTimer){ clearTimeout(verifyTimer); verifyTimer = null; }
+    $("soundAlert").classList.remove("show");
+    $("mask").classList.remove("show");
+    if(a){
+      // 有設定重複日的鬧鐘，關掉後自動重新待命；否則響過就停用
+      if(a.days && a.days.length){ a.done = false; a.enabled = true; }
+      else{ a.enabled = false; a.done = true; }
+      a._lastKey = hhmm(new Date());
+      saveAlarms(); renderList();
+    }
+    current = null;
+    ringing = false;
+    streak = 0;
+    updateKeepAlive();
+
+    if(pending.length){
+      var next = pending.shift();
+      setTimeout(function(){ fire(next); }, 400);
+    }
+  }
+
+  function submitAnswer(){
+    var raw = ($("qInput").value || "").trim();
+    if(raw === ""){ flash("請輸入答案", ""); return; }
+    var val = Number(raw);
+    if(!isFinite(val)){ flash("只能輸入數字", "err"); return; }
+
+    if(val === answer){
+      streak++;
+      renderDots();
+      if(streak >= 5){
+        $("msg").textContent = "全對！現在可以關閉鬧鐘了。";
+        $("msg").className = "msg ok";
+        $("btnStop").disabled = false;
+        $("qText").innerHTML = svg(ICON.check, " ic-lg") + " 解鎖完成";
+        $("btnSubmit").disabled = true;
+      }else{
+        $("msg").textContent = "答對了，再 " + (5-streak) + " 題。";
+        $("msg").className = "msg ok";
+        setTimeout(newQuestion, 480);
+      }
+    }else{
+      streak = 0;
+      renderDots();
+      flash("答錯！計數歸零，重新開始。", "err");
+      var m = $("modal");
+      m.classList.remove("shake");
+      void m.offsetWidth;
+      m.classList.add("shake");
+      setTimeout(newQuestion, 620);
+    }
+  }
+
+  function flash(text, cls){
+    var el = $("msg");
+    el.textContent = text;
+    el.className = "msg" + (cls ? " " + cls : "");
+  }
+
+  /* ---------------- 計時迴圈 ---------------- */
+  var lastClock = "";
+  function renderClock(str){
+    var el = $("clock");
+    if(el.childNodes.length !== str.length || !lastClock || lastClock.length !== str.length){
+      el.innerHTML = "";
+      for(var i=0;i<str.length;i++){
+        var s = document.createElement("span");
+        s.className = (str.charAt(i) === ":") ? "sep" : "dig";
+        s.textContent = str.charAt(i);
+        el.appendChild(s);
+      }
+    }else{
+      for(var j=0;j<str.length;j++){
+        var node = el.childNodes[j];
+        var ch = str.charAt(j);
+        if(node.textContent !== ch){
+          node.textContent = ch;
+          if(node.className === "dig"){
+            node.classList.remove("go");
+            void node.offsetWidth;   // 強制重排，讓動畫可以重新觸發
+            node.classList.add("go");
+          }
+        }
+      }
+    }
+    lastClock = str;
+  }
+
+  function tick(){
+    var now = new Date();
+    renderClock(pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds()));
+    var wd = DAY_NAME[now.getDay()];
+    $("today").innerHTML = "<b>星期" + wd + "</b> · " + now.getFullYear() + " 年 " +
+                           (now.getMonth()+1) + " 月 " + now.getDate() + " 日";
+
+    var key = hhmm(now);
+    var dow = now.getDay();
+    for(var i=0;i<alarms.length;i++){
+      var a = alarms[i];
+      if(!a.enabled || a.done) continue;
+      if(a._lastKey === key) continue;
+      // 有勾重複日時，只在那幾天響
+      if(a.days && a.days.length && a.days.indexOf(dow) === -1) continue;
+      if(a.time === key){
+        a._lastKey = key;
+        fire(a);
+      }
+    }
+  }
+
+  /* ---------- 螢幕恆亮 ---------- */
+  var wlSentinel = null, wlSupported = ("wakeLock" in navigator);
+  function requestWakeLock(){
+    if(!wlSupported || document.hidden) return;
+    try{
+      navigator.wakeLock.request("screen").then(function(s){
+        wlSentinel = s;
+        if(s && s.addEventListener) s.addEventListener("release", function(){ wlSentinel = null; });
+      }).catch(function(){});
+    }catch(e){}
+  }
+  function updateCheckPanel(){
+    var el = $("checkPanel");
+    if(!el) return;
+    var armed = 0;
+    for(var i=0;i<alarms.length;i++) if(alarms[i].enabled && !alarms[i].done) armed++;
+    function line(k, good, text){
+      return '<div class="line"><span>' + k + '</span><span class="' + (good?"ok":"no") + '">' + text + '</span></div>';
+    }
+    var wakeTxt = !wlSupported ? "此瀏覽器不支援"
+                : (wlSentinel ? "已取得" : (document.hidden ? "螢幕已關閉" : "未取得 · 點下方按鈕"));
+    el.innerHTML =
+      '<div class="ttl">睡前檢查（手機務必全部綠燈）</div>' +
+      line("螢幕恆亮", !!wlSentinel, wakeTxt) +
+      line("聲音解鎖", audioUnlocked, audioUnlocked ? "已解鎖" : "未解鎖 · 點「啟用聲音」") +
+      line("鎖屏相容播放", prefs.mediaMode || prefs.forceFallback,
+           (prefs.mediaMode ? "media 播放器（建議）" : (prefs.forceFallback ? "備援播放器" : "Web Audio（鎖屏易失效）"))) +
+      line("保活音訊", !!keepAliveEl, keepAliveEl ? "播放中" : "未播放") +
+      line("鎖屏保活", !!bgEl, bgEl ? (ringOnBg ? "響鈴中" : "播放中（頁面不會被凍結）") : "未播放") +
+      line("待觸發鬧鐘", armed > 0, armed + " 個");
+  }
+
+  /* ---------------- 事件綁定 ---------------- */
+  function toast(text){
+    var n = document.createElement("div");
+    n.textContent = text;
+    n.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:28px;background:var(--accent-strong);color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:600;z-index:200;max-width:90vw;box-shadow:0 8px 24px -6px rgba(15,23,42,.45);transition:opacity .3s";
+    document.body.appendChild(n);
+    setTimeout(function(){ n.style.transition = "opacity .3s"; n.style.opacity = "0"; }, 1600);
+    setTimeout(function(){ if(n.parentNode) n.parentNode.removeChild(n); }, 2000);
+  }
+
+  function bind(){
+    // 主按鈕：開新增彈窗（含滾輪選時間）
+    $("btnAdd").onclick = function(){ openEditor(null); };
+
+    // 編輯彈窗
+    $("edSave").onclick = saveEditor;
+    $("edCancel").onclick = closeEditor;
+    $("edMask").onclick = function(e){ if(e.target === this) closeEditor(); };
+    var eq = $("edQuick").querySelectorAll(".chip");
+    for(var q=0;q<eq.length;q++){
+      eq[q].onclick = function(){
+        var d = new Date(Date.now() + Number(this.getAttribute("data-min"))*60000);
+        setWheel($("wheelH"), d.getHours());
+        setWheel($("wheelM"), d.getMinutes());
+      };
+    }
+
+    // 深淺色切換
+    $("btnTheme").onclick = function(){
+      applyTheme(prefs.theme === "dark" ? "light" : "dark", true);
+      savePrefs();
+    };
+
+    $("btnPreview").onclick = function(){
+      ensureAudio();
+      preview($("selSound").value);
+      setTimeout(function(){
+        toast("鈴聲狀態：" + (ctxState() === "running" ? "播放中" : "被鎖住，請按「啟用聲音」"));
+      }, 600);
+    };
+    $("btnTest5").onclick = function(){
+      var d = new Date(Date.now() + 5000);
+      alarms.push({
+        id: uid(), time: hhmm(d), label: "測試鬧鐘",
+        sound: $("selSound").value, enabled: true, done: false, days: [],
+        _lastKey: hhmm(new Date())
+      });
+      if(hhmm(new Date()) === hhmm(d)) alarms[alarms.length-1]._lastKey = "";
+      saveAlarms(); renderList(); updateKeepAlive();
+      toast("5 秒後響鈴：" + hhmm(d) + "（秒數到點才會觸發）");
+    };
+    $("btnUpload").onclick = function(){ $("fileSound").click(); };
+    $("fileSound").onchange = function(e){
+      var f = e.target.files && e.target.files[0];
+      if(!f) return;
+      if(f.size > 4*1024*1024){ toast("檔案太大（>4MB），請換一個"); e.target.value=""; return; }
+      var fr = new FileReader();
+      fr.onload = function(){
+        var s = {id: uid(), name: f.name.replace(/\.[^.]+$/, "").slice(0,16) || "自訂", dataUrl: fr.result};
+        customSounds.push(s);
+        saveSounds(); renderSounds();
+        $("selSound").value = "custom:" + s.id;
+        toast("已加入鈴聲：" + s.name + (f.size > 1.5*1024*1024 ? "（檔案較大，重開後可能失效）" : ""));
+      };
+      fr.onerror = function(){ toast("讀取失敗，請換一個檔案"); };
+      fr.readAsDataURL(f);
+      e.target.value = "";
+    };
+
+
+    $("chkNotify").onchange = function(){
+      var self = this;
+      if(self.checked){
+        if(typeof Notification === "undefined"){ self.checked = false; toast("此瀏覽器不支援通知"); return; }
+        if(Notification.permission === "granted"){ prefs.notify = true; savePrefs(); return; }
+        Notification.requestPermission().then(function(p){
+          prefs.notify = (p === "granted");
+          self.checked = prefs.notify;
+          savePrefs();
+        });
+      }else{ prefs.notify = false; savePrefs(); }
+    };
+    $("chkKeepAlive").onchange = function(){
+      prefs.keepAlive = this.checked;
+      savePrefs(); updateKeepAlive();
+    };
+    $("rngVol").oninput = function(){
+      prefs.vol = Number(this.value);
+      setVol(); savePrefs();
+    };
+    $("chkFallback").onchange = function(){
+      prefs.forceFallback = this.checked;
+      savePrefs();
+      toast(this.checked ? "已切換備援播放器" : "已切換合成鈴聲");
+    };
+    $("chkMedia").onchange = function(){
+      prefs.mediaMode = this.checked;
+      savePrefs();
+      toast(this.checked ? "已改用 media 播放器（鎖屏相容）" : "已改用 Web Audio 合成");
+      if(ringing){ stopSound(); playSound(current ? current.sound : "beep"); }
+      updateCheckPanel();
+    };
+    $("selBgAmp").onchange = function(){
+      prefs.bgAmp = Number(this.value);
+      savePrefs();
+      restartBgAudio();
+      toast("保活音量已調整，背景音已重新啟動");
+    };
+    $("btnBgTest").onclick = function(){
+      try{
+        var t = new Audio(bgUrl());
+        t.loop = true;
+        t.volume = 1;
+        var q = t.play();
+        if(q && q.catch) q.catch(function(){ toast("播放被擋，請先點「啟用聲音」"); });
+        toast("播放 4 秒保活音 — 正常應該幾乎聽不到");
+        setTimeout(function(){ try{ t.pause(); }catch(e){} }, 4000);
+      }catch(e){ toast("無法播放"); }
+    };
+    $("chkLock").onchange = function(){
+      prefs.lockMode = this.checked;
+      savePrefs();
+      updateLockBg();
+      updateCheckPanel();
+      toast(this.checked
+        ? "鎖屏模式開：會整晚持續播放（耗電），iPhone 請關掉靜音撥桿"
+        : "鎖屏模式關：iOS 下請改成「自動鎖定 → 永不」");
+    };
+
+    // 啟用聲音 / 診斷
+    $("btnEnable").onclick = function(){
+      ensureAudio();
+      setTimeout(function(){
+        stopSound();
+        playSound($("selSound").value);
+        setTimeout(function(){
+          stopSound();
+          var st = ctxState();
+          toast(st === "running" ? "聲音已啟用（剛剛播了 2 秒測試音）" : "仍被鎖住：" + st);
+          refreshBadge();
+        }, 1800);
+      }, 250);
+    };
+    $("btnEnable2").onclick = function(){
+      ensureAudio();
+      setTimeout(function(){ if(ringing) playSound(current ? current.sound : "beep"); }, 250);
+    };
+    $("btnDiag").onclick = function(){
+      var hasWA = !!(window.AudioContext || window.webkitAudioContext);
+      var lines = [
+        "AudioContext 支援：" + (hasWA ? "是" : "否"),
+        "狀態：" + ctxState(),
+        "取樣率：" + (ctx ? Math.round(ctx.sampleRate) : "—"),
+        "主音量：" + prefs.vol + "%",
+        "備援播放器：" + (prefs.forceFallback ? "強制開啟" : "自動"),
+        "震動支援：" + (navigator.vibrate ? "是" : "否"),
+        "協定：" + location.protocol
+      ];
+      $("diagTxt").innerHTML = lines.join("<br>");
+      toast("診斷完成，請看下方文字");
+    };
+
+    $("btnSubmit").onclick = submitAnswer;
+    $("qInput").onkeydown = function(e){ if(e.key === "Enter") submitAnswer(); };
+    $("btnStop").onclick = finishAlarm;
+    $("mask").onclick = function(e){ if(e.target === this){ flash("先答對 5 題才能離開。", "err"); } };
+    $("edLabel").onkeydown = function(e){ if(e.key === "Enter") saveEditor(); };
+    document.addEventListener("keydown", function(e){
+      if(e.key !== "Escape") return;
+      // 編輯彈窗可以關；響鈴彈窗不行
+      if($("edMask").classList.contains("show")){ closeEditor(); return; }
+      if($("mask").classList.contains("show")){
+        e.preventDefault();
+        flash("先答對 5 題才能離開。", "err");
+      }
+    });
+
+    // 每次互動都嘗試解鎖音訊（瀏覽器可能反覆鎖回去）
+    var unlock = function(){
+      // 鎖屏保活也要趁使用者互動時啟動，iOS 才會放行
+      if(prefs.lockMode && !bgEl) updateLockBg();
+      var before = ctxState();
+      var c = ac();
+      if(!c){ refreshBadge(); return; }
+      var done = function(){
+        var after = ctxState();
+        refreshBadge();
+        if(after === "running"){
+          $("soundAlert").classList.remove("show");
+          // 原本被鎖住、現在解鎖了 → 重播一次，避免排程擠在一起
+          if(ringing && before !== "running"){
+            stopSound();
+            playSound(current ? current.sound : "beep");
+          }
+        }
+      };
+      if(c.resume){
+        var p = c.resume();
+        if(p && p.then) p.then(done, done); else setTimeout(done, 200);
+      }else setTimeout(done, 200);
+    };
+    ["click","pointerdown","touchstart","keydown"].forEach(function(ev){
+      document.addEventListener(ev, unlock, {passive:true});
+    });
+
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden){ tick(); ensureAudio(); }
+    });
+
+    // 螢幕恆亮：有鬧鐘待觸發就持續佔住，頁面回到前景時重新申請
+    requestWakeLock();
+    document.addEventListener("visibilitychange", function(){
+      if(!document.hidden){ tick(); ensureAudio(); requestWakeLock(); }
+    });
+    setInterval(function(){ if(!document.hidden && !wlSentinel) requestWakeLock(); }, 15000);
+    $("btnWake").onclick = function(){
+      requestWakeLock();
+      setTimeout(function(){
+        toast(wlSentinel ? "螢幕恆亮已啟用" : (wlSupported ? "申請失敗，請手動關閉自動鎖定" : "此瀏覽器不支援，請手動關閉自動鎖定"));
+        updateCheckPanel();
+      }, 400);
+    };
+  }
+
+  /* ---------------- 啟動 ---------------- */
+  function init(){
+    load();
+    renderSounds();
+    renderList();
+    $("chkNotify").checked = prefs.notify;
+    $("chkKeepAlive").checked = prefs.keepAlive;
+    $("chkFallback").checked = prefs.forceFallback;
+    $("chkMedia").checked = prefs.mediaMode;
+    $("chkLock").checked = prefs.lockMode;
+    $("selBgAmp").value = String(prefs.bgAmp);
+    $("bellIcon").innerHTML = svg(ICON.bell, " ic-lg");
+    $("alertTitle").innerHTML = svg(ICON.warn) + "偵測到聲音被瀏覽器鎖住";
+    $("brandMark").innerHTML = svg(ICON.clock, " ic-sm");
+    var chev = $("advChevron");
+    if(chev) chev.innerHTML = svg(ICON.chevron, " ic-sm");
+    applyTheme(prefs.theme, false);
+    $("rngVol").value = prefs.vol;
+    refreshBadge();
+    updateCheckPanel();
+    setInterval(function(){ refreshBadge(); updateCheckPanel(); updateLockBg(); }, 2000);
+    if(IS_MOBILE) toast("偵測到手機：已自動開啟鎖屏相容播放與保活音訊");
+    bind();
+    tick();
+    setInterval(tick, 250);
+  }
+
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+</body>
+</html>
